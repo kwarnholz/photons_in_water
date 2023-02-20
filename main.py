@@ -32,7 +32,7 @@ class Photon:
 
 def find_nearest_attenuation_coefficient(list, energy):
     """
-    Returns the closest attenuation coefficient from a list
+    Returns the best fitting attenuation coefficient from a list
     :param list:    array of energies and attenuation coefficients
     :type list:     numpy.ndarray
     :param energy:  energy to be used (in MeV!)
@@ -43,6 +43,19 @@ def find_nearest_attenuation_coefficient(list, energy):
     return list[idx, 1]
 
 
+def find_nearest_cross_sections(list, energy):
+    """
+    Returns the best fitting cross-sections from a list
+    :param list:    array of energies and attenuation coefficients
+    :type list:     numpy.ndarray
+    :param energy:  energy to be used (in MeV!)
+    :type energy:   float
+    :return:        numpy.ndarray
+    """
+    idx = (np.abs(list[:, 0] - energy)).argmin()
+    return list[idx, :]
+
+
 # water region (depth: x, width: y)
 DEPTH = 10  # cm
 WIDTH = 5   # cm
@@ -50,7 +63,7 @@ WIDTH = 5   # cm
 # coordinates of beam source
 BEAM_SOURCE = np.array([0, 0])
 water_region = np.array([[BEAM_SOURCE[0], BEAM_SOURCE[1]-WIDTH/2],
-                     [BEAM_SOURCE[0]+DEPTH, BEAM_SOURCE[1]+WIDTH/2]])
+                         [BEAM_SOURCE[0]+DEPTH, BEAM_SOURCE[1]+WIDTH/2]])
 
 # initial energy
 INIT_ENERGY = 100E3  # eV
@@ -63,9 +76,12 @@ NUMBER_DENSITY = 33.3679E21
 MASS_DENSITY = 998.23E-3  # g/cm³
 
 # attenuation coefficients of water
-# https://physics.nist.gov/PhysRefData/XrayMassCoef/ComTab/water.html
 # Energy (MeV) | mu/rho (cm²/g) | mu_en/rho (cm²/g)
 ATTEN_COEFF = np.load('attenuation_coefficients.npy')
+
+# cross-sections of photons in water
+# Energy | Rayleigh | Compton | photoelectric effect | pair production | total
+CROSS_SECTIONS = np.load('cross_sections.npy')
 
 # number of events
 # N_EVENTS = 1E4
