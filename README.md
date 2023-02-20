@@ -8,4 +8,4 @@ Simulation of a photon pencil beam and interactions in a 2D water region
 
 **Cross sections:**
 * Source: https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html
-* `cross_sections.npy` is a 2D array with columns: Energy (MeV) | coherent scattering (cm²/g) | Compton (cm²/g) | photoelectric absorption (cm²/g) | pair production (cm²/g) | total (cm²/g)
+* `cross_sections.npy` is a 2D array with columns: Energy (MeV) | Rayleigh (cm²/g) | Compton (cm²/g) | photoelectric absorption (cm²/g) | pair production (cm²/g) | total (cm²/g)
