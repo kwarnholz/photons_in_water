@@ -53,7 +53,7 @@ def find_nearest_cross_sections(list, energy):
     :return:        numpy.ndarray
     """
     idx = (np.abs(list[:, 0] - energy)).argmin()
-    return list[idx, :]
+    return list[idx, 1:]
 
 
 # water region (depth: x, width: y)
@@ -80,7 +80,7 @@ MASS_DENSITY = 998.23E-3  # g/cm³
 ATTEN_COEFF = np.load('attenuation_coefficients.npy')
 
 # cross-sections of photons in water
-# Energy | Rayleigh | Compton | photoelectric effect | pair production | total
+# Energy | Rayleigh | Compton | photoelectric effect | pair production (nuclear) | pair production (electron) | total
 CROSS_SECTIONS = np.load('cross_sections.npy')
 
 # number of events
@@ -107,5 +107,5 @@ if __name__ == '__main__':
         # check whether photon is still inside water region
         if photon.in_rectangle(water_region):
             print('Do stuff!')
-        # else:
-        #     break
+        else:
+            break
