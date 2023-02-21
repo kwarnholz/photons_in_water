@@ -26,6 +26,9 @@ class Photon:
         self.x = position[0]
         self.y = position[1]
 
+    def set_direction(self, direction):
+        self.direction = direction
+
     def in_rectangle(self, rectangle):
         return (rectangle[0, 0] <= self.x <= rectangle[1, 0]) and (rectangle[0, 1] <= self.y <= rectangle[1, 1])
 
@@ -54,6 +57,18 @@ def find_nearest_cross_sections(list, energy):
     """
     idx = (np.abs(list[:, 0] - energy)).argmin()
     return list[idx, 1:]
+
+
+def cross_sections_to_probabilities(cross_sections):
+    """
+    Converts a list of cross-sections to probabilities where the last list entry is the total cross-section.
+    They should be in this order: Rayleigh, Compton, photoelectric effect, pair production (n), pair production (e).
+    :param cross_sections:  list of cross-sections
+    :type cross_sections:   numpy.ndarray
+    :return:                numpy.ndarray
+    """
+    probabilities = cross_sections[:5]/cross_sections[5]
+    return probabilities
 
 
 # water region (depth: x, width: y)
@@ -107,5 +122,26 @@ if __name__ == '__main__':
         # check whether photon is still inside water region
         if photon.in_rectangle(water_region):
             print('Do stuff!')
+            cross_sections = find_nearest_cross_sections(CROSS_SECTIONS, photon.energy)
+            print(cross_sections)
+            print(cross_sections[:4])
+            probabilities = cross_sections_to_probabilities(cross_sections)
+            print(probabilities)
+            print(np.sum(probabilities))
+            interaction_sampling = random.random()
+
+            if interaction_sampling <= probabilities[0]:
+                # Rayleigh scattering
+
+            elif interaction_sampling <= probabilities[0] + probabilities[2]:
+                # photoelectric absorption
+
+            elif interaction_sampling <= np.sum(probabilities[:3]):
+                # Compton scattering
+
+            else:
+                # pair production
+
+
         else:
-            break
+            print('The photon is gone.')
