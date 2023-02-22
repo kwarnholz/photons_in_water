@@ -29,8 +29,18 @@ class Photon:
     def set_direction(self, direction):
         self.direction = direction
 
+    def set_energy(self, energy):
+        self.energy = energy
+
     def in_rectangle(self, rectangle):
         return (rectangle[0, 0] <= self.x <= rectangle[1, 0]) and (rectangle[0, 1] <= self.y <= rectangle[1, 1])
+
+    def do_rayleigh(self):
+        random_angle = 2 * np.pi * random.random
+        self.set_direction(random_angle)
+
+    def do_photoelectric(self):
+        self.set_energy(0)
 
 
 def find_nearest_attenuation_coefficient(list, energy):
@@ -132,9 +142,11 @@ if __name__ == '__main__':
 
             if interaction_sampling <= probabilities[0]:
                 # Rayleigh scattering
+                photon.do_rayleigh()
 
             elif interaction_sampling <= probabilities[0] + probabilities[2]:
                 # photoelectric absorption
+                photon.do_photoelectric()
 
             elif interaction_sampling <= np.sum(probabilities[:3]):
                 # Compton scattering
@@ -145,3 +157,4 @@ if __name__ == '__main__':
 
         else:
             print('The photon is gone.')
+            break
