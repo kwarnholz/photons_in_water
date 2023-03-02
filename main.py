@@ -36,8 +36,22 @@ class Photon:
         return (rectangle[0, 0] <= self.x <= rectangle[1, 0]) and (rectangle[0, 1] <= self.y <= rectangle[1, 1])
 
     def do_rayleigh(self):
-        random_angle = 2 * np.pi * random.random
-        self.set_direction(random_angle)
+        zeta = random.random()
+        xi = random.random()
+
+        # p_1 = I_1(π) / ( I_1(π) + I_2(π) )
+        # with I_1(π) = integral sin(θ) dθ from 0 to π
+        #      I_2(π) = integral cos²(θ) sin(θ) dθ from 0 to π
+        p_1 = 3/4
+
+        if zeta <= p_1:
+            polar_angle = np.arccos(1 - 2*zeta)
+        elif xi <= 0.5:
+            polar_angle = np.arccos((1 - 2*xi) ** (1/3))
+        else:
+            polar_angle = np.arccos(- (2*xi - 1) ** (1/3))
+
+        self.set_direction(self.direction + polar_angle)
 
     def do_photoelectric(self):
         self.set_energy(0)
