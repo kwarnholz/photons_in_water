@@ -56,6 +56,25 @@ class Photon:
     def do_photoelectric(self):
         self.set_energy(0)
 
+    def do_compton(self):
+        eta_1 = random.random()
+        eta_2 = random.random()
+        zeta = random.random()
+
+        alpha = # to be defined
+
+        E_prime_min = E/(1+2*alpha)
+        E_prime_max = self.energy
+
+        A_1 = 2 / ( E_prime_max**2 - E_prime_min**2 )
+
+        k_1 = 1/(A_1 * self.energy)
+        k_2 = self.energy/A_2
+
+        p_1 = k_1 / (k_1 + k_2)
+
+        # do something sensible
+
 
 def find_nearest_attenuation_coefficient(list, energy):
     """
@@ -164,9 +183,13 @@ if __name__ == '__main__':
 
             elif interaction_sampling <= np.sum(probabilities[:3]):
                 # Compton scattering
+                photon.do_compton()
 
             else:
                 # pair production
+
+            if photon.energy = 0:
+                break
 
 
         else:
