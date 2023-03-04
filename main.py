@@ -57,27 +57,40 @@ class Photon:
         self.set_energy(0)
 
     def do_compton(self):
-        eta_1 = random.random()
-        eta_2 = random.random()
-        zeta = random.random()
+        unsuccessful = True
 
-        E_prime_min = 1 / ( 1/photon.energy + 2/(510998.95**2) )
-        E_prime_max = self.energy
+        while unsuccessful:
+            eta_1 = random.random()
+            eta_2 = random.random()
+            zeta = random.random()
 
-        A_1 = 2 / ( E_prime_max**2 - E_prime_min**2 )
-        # add A_2
+            E_prime_min = 1 / ( 1/self.energy + 2/(510998.95**2) )
+            E_prime_max = self.energy
 
-        k_1 = 1/(A_1 * self.energy)
-        k_2 = self.energy/A_2
+            A_1 = 2 / ( E_prime_max**2 - E_prime_min**2 )
+            A_2 = 1 / ( np.log(E_prime_max) - np.log(E_prime_min) )  # I'm unsure about the energy units here...
 
-        p_1 = k_1 / (k_1 + k_2)
+            k_1 = 1/(A_1 * self.energy)
+            k_2 = self.energy/A_2
 
-        if eta_1 < p_1:
-            xi = np.sqrt(E_prime_min**2 + 2*eta_2/A_1)
-        else:
-            xi = E_prime_min * np.exp(eta_2/A_2)
+            p_1 = k_1 / (k_1 + k_2)
 
-        # continue with something smart
+            if eta_1 < p_1:
+                xi = np.sqrt(E_prime_min**2 + 2*eta_2/A_1)
+            else:
+                xi = E_prime_min * np.exp(eta_2/A_2)
+
+            polar_angle = np.arcsin( np.sqrt( 1 - ( 1 - 1/xi + 1/self.energy )**2 ) )   # I'm unsure about the
+                                                                                        # energy units here...
+
+            fcg_quotient = 1 - np.sin(polar_angle) ** 2 / (xi/self.energy + self.energy/xi)
+
+            if zeta <= fcg_quotient:
+                self.set_energy(xi)
+                self.set_direction(self.direction + polar_angle)
+
+    def do_pair_production(self):
+        self.set_energy(0)
 
 
 def find_nearest_attenuation_coefficient(list, energy):
@@ -191,8 +204,9 @@ if __name__ == '__main__':
 
             else:
                 # pair production
+                photon.do_pair_production()
 
-            if photon.energy = 0:
+            if photon.energy == 0:
                 break
 
 
