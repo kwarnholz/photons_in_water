@@ -61,19 +61,23 @@ class Photon:
         eta_2 = random.random()
         zeta = random.random()
 
-        alpha = # to be defined
-
-        E_prime_min = E/(1+2*alpha)
+        E_prime_min = 1 / ( 1/photon.energy + 2/(510998.95**2) )
         E_prime_max = self.energy
 
         A_1 = 2 / ( E_prime_max**2 - E_prime_min**2 )
+        # add A_2
 
         k_1 = 1/(A_1 * self.energy)
         k_2 = self.energy/A_2
 
         p_1 = k_1 / (k_1 + k_2)
 
-        # do something sensible
+        if eta_1 < p_1:
+            xi = np.sqrt(E_prime_min**2 + 2*eta_2/A_1)
+        else:
+            xi = E_prime_min * np.exp(eta_2/A_2)
+
+        # continue with something smart
 
 
 def find_nearest_attenuation_coefficient(list, energy):
