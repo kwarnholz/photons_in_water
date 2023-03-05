@@ -64,11 +64,13 @@ class Photon:
             eta_2 = random.random()
             zeta = random.random()
 
-            E_prime_min = 1 / ( 1/self.energy + 2/(510998.95**2) )
+            E_prime_min = 1 / (1/self.energy + 2/510998.95)
             E_prime_max = self.energy
 
-            A_1 = 2 / ( E_prime_max**2 - E_prime_min**2 )
-            A_2 = 1 / ( np.log(E_prime_max) - np.log(E_prime_min) )  # I'm unsure about the energy units here...
+            A_1 = 2 / (E_prime_max**2 - E_prime_min)
+            A_2 = 1 / (np.log(E_prime_max/510998.95) - np.log(E_prime_min/510998.95))
+            # I'm unsure about the
+            # energy units here...
 
             k_1 = 1/(A_1 * self.energy)
             k_2 = self.energy/A_2
@@ -80,14 +82,16 @@ class Photon:
             else:
                 xi = E_prime_min * np.exp(eta_2/A_2)
 
-            polar_angle = np.arcsin( np.sqrt( 1 - ( 1 - 1/xi + 1/self.energy )**2 ) )   # I'm unsure about the
-                                                                                        # energy units here...
+            polar_angle = np.arcsin(np.sqrt(1 - (1 - 510998.95/xi + 510998.95/self.energy)**2))
+            # I'm unsure about the
+            # energy units here...
 
             fcg_quotient = 1 - np.sin(polar_angle) ** 2 / (xi/self.energy + self.energy/xi)
 
             if zeta <= fcg_quotient:
                 self.set_energy(xi)
                 self.set_direction(self.direction + polar_angle)
+                unsuccessful = False
 
     def do_pair_production(self):
         self.set_energy(0)
@@ -167,49 +171,55 @@ if __name__ == '__main__':
         # create photon
         photon = Photon(BEAM_SOURCE, INIT_DIRECTION, INIT_ENERGY)
 
-        # find attenuation coefficient for the closest energy in table
-        attenuation_coefficient = find_nearest_attenuation_coefficient(ATTEN_COEFF, photon.energy/1E6) * MASS_DENSITY
-        print(attenuation_coefficient)
+        consider_photon = True
 
-        # sample distance to next interaction
-        distance = - 1/attenuation_coefficient * np.log(random.random())
-        print(distance)
+        while consider_photon:
 
-        # assign new position to photon
-        photon.set_position(photon.position + distance * np.array([np.cos(photon.direction), np.sin(photon.direction)]))
-        print(photon.position)
+            # find attenuation coefficient for the closest energy in table
+            attenuation_coefficient = find_nearest_attenuation_coefficient(ATTEN_COEFF, photon.energy/1E6) * MASS_DENSITY
 
-        # check whether photon is still inside water region
-        if photon.in_rectangle(water_region):
-            print('Do stuff!')
-            cross_sections = find_nearest_cross_sections(CROSS_SECTIONS, photon.energy)
-            print(cross_sections)
-            print(cross_sections[:4])
-            probabilities = cross_sections_to_probabilities(cross_sections)
-            print(probabilities)
-            print(np.sum(probabilities))
-            interaction_sampling = random.random()
+            # sample distance to next interaction
+            distance = - 1/attenuation_coefficient * np.log(random.random())
 
-            if interaction_sampling <= probabilities[0]:
-                # Rayleigh scattering
-                photon.do_rayleigh()
+            # assign new position to photon
+            photon.set_position(photon.position + distance * np.array([np.cos(photon.direction), np.sin(photon.direction)]))
 
-            elif interaction_sampling <= probabilities[0] + probabilities[2]:
-                # photoelectric absorption
-                photon.do_photoelectric()
+            print(photon.position)
 
-            elif interaction_sampling <= np.sum(probabilities[:3]):
-                # Compton scattering
-                photon.do_compton()
+            # check whether photon is still inside water region
+            if photon.in_rectangle(water_region):
+                print('Do stuff!')
+                cross_sections = find_nearest_cross_sections(CROSS_SECTIONS, photon.energy)
+                probabilities = cross_sections_to_probabilities(cross_sections)
+                interaction_sampling = random.random()
+
+                print(probabilities)
+                print(interaction_sampling)
+
+                if interaction_sampling <= probabilities[0]:
+                    # Rayleigh scattering
+                    photon.do_rayleigh()
+                    print('Rayleigh!')
+
+                elif interaction_sampling <= probabilities[0] + probabilities[2]:
+                    # photoelectric absorption
+                    photon.do_photoelectric()
+                    print('Photoelectric effect!')
+
+                elif interaction_sampling <= np.sum(probabilities[:3]):
+                    # Compton scattering
+                    photon.do_compton()
+                    print('Compton!')
+
+                else:
+                    # pair production
+                    photon.do_pair_production()
+                    print('Pair production!')
+
+                print(photon.energy)
+                if photon.energy == 0:
+                    consider_photon = False
 
             else:
-                # pair production
-                photon.do_pair_production()
-
-            if photon.energy == 0:
-                break
-
-
-        else:
-            print('The photon is gone.')
-            break
+                print('The photon is gone.')
+                consider_photon = False
