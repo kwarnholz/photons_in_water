@@ -206,7 +206,8 @@ if __name__ == '__main__':
             distance = - 1/attenuation_coefficient * np.log(random.random())
 
             # assign new position to photon
-            photon.set_position(photon.position + distance * np.array([np.cos(photon.direction), np.sin(photon.direction)]))
+            photon.set_position(photon.position + distance * np.array([np.cos(photon.direction),
+                                                                       np.sin(photon.direction)]))
             positions = np.append(positions, photon.position)
 
             # check whether photon is still inside water region
@@ -252,6 +253,8 @@ if __name__ == '__main__':
 
     print('Simulated energy deposition: ' + str(deposited_energy/N_EVENTS*NUMBER_DENSITY) + ' MeV')
 
-    expected_energy = INIT_ENERGY * NUMBER_DENSITY * find_nearest_energy_absorption_coefficient(ATTEN_COEFF, INIT_ENERGY, MASS_DENSITY) * DEPTH
+    expected_energy = INIT_ENERGY * NUMBER_DENSITY * DEPTH * find_nearest_energy_absorption_coefficient(ATTEN_COEFF,
+                                                                                                        INIT_ENERGY,
+                                                                                                        MASS_DENSITY)
 
     print('Expected energy:             ' + str(expected_energy) + ' MeV')
