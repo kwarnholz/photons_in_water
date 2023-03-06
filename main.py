@@ -167,12 +167,14 @@ CROSS_SECTIONS = np.load('cross_sections.npy')
 N_EVENTS = 1
 
 if __name__ == '__main__':
+
     for i in range(N_EVENTS):
         # create photon
         photon = Photon(BEAM_SOURCE, INIT_DIRECTION, INIT_ENERGY)
 
-        consider_photon = True
+        positions = np.array(BEAM_SOURCE)
 
+        consider_photon = True
         while consider_photon:
 
             # find attenuation coefficient for the closest energy in table
@@ -183,6 +185,7 @@ if __name__ == '__main__':
 
             # assign new position to photon
             photon.set_position(photon.position + distance * np.array([np.cos(photon.direction), np.sin(photon.direction)]))
+            positions = np.append(positions, photon.position)
 
             print(photon.position)
 
@@ -224,3 +227,9 @@ if __name__ == '__main__':
             else:
                 print('The photon is gone.')
                 consider_photon = False
+
+        positions = positions.reshape((int(len(positions)/2), 2))
+        print(positions)
+
+        plt.plot(positions[:,0], positions[:,1])
+        plt.show()
