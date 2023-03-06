@@ -4,6 +4,14 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+
+def random_sign():
+    if random.random() < 0.5:
+        return -1
+    else:
+        return 1
+
+
 class Photon:
     def __init__(self, position, direction, energy):
         """
@@ -12,7 +20,7 @@ class Photon:
         :type position:     numpy.ndarray
         :param direction:   direction of the photon in [0, 2pi)
         :type direction:    float
-        :param energy:      photon energy in eV
+        :param energy:      photon energy in MeV
         :type energy:       float
         """
         self.position = position
@@ -51,7 +59,7 @@ class Photon:
         else:
             polar_angle = np.arccos(- (2*xi - 1) ** (1/3))
 
-        self.set_direction(self.direction + polar_angle)
+        self.set_direction(self.direction + random_sign() * polar_angle)
 
     def do_photoelectric(self):
         self.set_energy(0)
@@ -64,11 +72,11 @@ class Photon:
             eta_2 = random.random()
             zeta = random.random()
 
-            E_prime_min = 1 / (1/self.energy + 2/510998.95)
+            E_prime_min = 1 / (1/self.energy + 2/0.511)
             E_prime_max = self.energy
 
             A_1 = 2 / (E_prime_max**2 - E_prime_min)
-            A_2 = 1 / (np.log(E_prime_max/510998.95) - np.log(E_prime_min/510998.95))
+            A_2 = 1 / (np.log(E_prime_max/0.511) - np.log(E_prime_min/0.511))
             # I'm unsure about the
             # energy units here...
 
@@ -78,11 +86,11 @@ class Photon:
             p_1 = k_1 / (k_1 + k_2)
 
             if eta_1 < p_1:
-                xi = np.sqrt(E_prime_min**2 + 2*eta_2/A_1)
+                xi = np.sqrt(np.abs(E_prime_min**2 + 2*eta_2/A_1))
             else:
                 xi = E_prime_min * np.exp(eta_2/A_2)
 
-            polar_angle = np.arcsin(np.sqrt(1 - (1 - 510998.95/xi + 510998.95/self.energy)**2))
+            polar_angle = np.arcsin(np.sqrt(1 - (1 - 0.511/xi + 0.511/self.energy)**2))
             # I'm unsure about the
             # energy units here...
 
@@ -90,14 +98,14 @@ class Photon:
 
             if zeta <= fcg_quotient:
                 self.set_energy(xi)
-                self.set_direction(self.direction + polar_angle)
+                self.set_direction(self.direction + random_sign() * polar_angle)
                 unsuccessful = False
 
     def do_pair_production(self):
         self.set_energy(0)
 
 
-def find_nearest_attenuation_coefficient(list, energy):
+def find_nearest_attenuation_coefficient(list, energy, density):
     """
     Returns the best fitting attenuation coefficient from a list
     :param list:    array of energies and attenuation coefficients
@@ -106,8 +114,21 @@ def find_nearest_attenuation_coefficient(list, energy):
     :type energy:   float
     :return:        float
     """
-    idx = (np.abs(list[:, 0] - energy/1E6)).argmin()
-    return list[idx, 1]
+    idx = (np.abs(list[:, 0] - energy)).argmin()
+    return list[idx, 1] * density
+
+
+def find_nearest_energy_absorption_coefficient(list, energy, density):
+    """
+    Returns the best fitting energy absorption coefficient from a list
+    :param list:    array of energies and energy absorption coefficients
+    :type list:     numpy.ndarray
+    :param energy:  energy to be used (in MeV!)
+    :type energy:   float
+    :return:        float
+    """
+    idx = (np.abs(list[:, 0] - energy)).argmin()
+    return list[idx, 2] * density
 
 
 def find_nearest_cross_sections(list, energy):
@@ -119,7 +140,7 @@ def find_nearest_cross_sections(list, energy):
     :type energy:   float
     :return:        numpy.ndarray
     """
-    idx = (np.abs(list[:, 0] - energy/1E6)).argmin()
+    idx = (np.abs(list[:, 0] - energy)).argmin()
     return list[idx, 1:]
 
 
@@ -145,13 +166,13 @@ water_region = np.array([[BEAM_SOURCE[0], BEAM_SOURCE[1]-WIDTH/2],
                          [BEAM_SOURCE[0]+DEPTH, BEAM_SOURCE[1]+WIDTH/2]])
 
 # initial energy
-INIT_ENERGY = 100E3  # eV
+INIT_ENERGY = 0.1  # MeV
 
 # initial direction (pencil beam: 0)
 INIT_DIRECTION = 0
 
-# number and mass density of water in 1/cm³ @ 20 °C and 1 bar
-NUMBER_DENSITY = 33.3679E21
+# number and mass density of water in @ 20 °C and 1 bar
+NUMBER_DENSITY = 1E8  # 1/cm²
 MASS_DENSITY = 998.23E-3  # g/cm³
 
 # attenuation coefficients of water
@@ -163,13 +184,14 @@ ATTEN_COEFF = np.load('attenuation_coefficients.npy')
 CROSS_SECTIONS = np.load('cross_sections.npy')
 
 # number of events
-# N_EVENTS = 1E4
-N_EVENTS = 1
+N_EVENTS = int(1E4)
 
 if __name__ == '__main__':
 
+    deposited_energy = 0
     for i in range(N_EVENTS):
         # create photon
+        print('Creating new photon...')
         photon = Photon(BEAM_SOURCE, INIT_DIRECTION, INIT_ENERGY)
 
         positions = np.array(BEAM_SOURCE)
@@ -178,7 +200,7 @@ if __name__ == '__main__':
         while consider_photon:
 
             # find attenuation coefficient for the closest energy in table
-            attenuation_coefficient = find_nearest_attenuation_coefficient(ATTEN_COEFF, photon.energy/1E6) * MASS_DENSITY
+            attenuation_coefficient = find_nearest_attenuation_coefficient(ATTEN_COEFF, photon.energy, MASS_DENSITY)
 
             # sample distance to next interaction
             distance = - 1/attenuation_coefficient * np.log(random.random())
@@ -187,40 +209,30 @@ if __name__ == '__main__':
             photon.set_position(photon.position + distance * np.array([np.cos(photon.direction), np.sin(photon.direction)]))
             positions = np.append(positions, photon.position)
 
-            print(photon.position)
-
             # check whether photon is still inside water region
             if photon.in_rectangle(water_region):
-                print('Do stuff!')
                 cross_sections = find_nearest_cross_sections(CROSS_SECTIONS, photon.energy)
-                print(cross_sections)
                 probabilities = cross_sections_to_probabilities(cross_sections)
                 interaction_sampling = random.random()
-
-                print(probabilities)
-                print(interaction_sampling)
 
                 if interaction_sampling <= probabilities[0]:
                     # Rayleigh scattering
                     photon.do_rayleigh()
-                    print('Rayleigh!')
 
                 elif interaction_sampling <= probabilities[0] + probabilities[2]:
                     # photoelectric absorption
                     photon.do_photoelectric()
-                    print('Photoelectric effect!')
+                    print('Photoelectric effect.')
 
                 elif interaction_sampling <= np.sum(probabilities[:3]):
                     # Compton scattering
                     photon.do_compton()
-                    print('Compton!')
 
                 else:
                     # pair production
                     photon.do_pair_production()
-                    print('Pair production!')
+                    print('Pair production.')
 
-                print(photon.energy)
                 if photon.energy == 0:
                     consider_photon = False
 
@@ -228,8 +240,18 @@ if __name__ == '__main__':
                 print('The photon is gone.')
                 consider_photon = False
 
-        positions = positions.reshape((int(len(positions)/2), 2))
-        print(positions)
+        deposited_energy += (INIT_ENERGY - photon.energy)
 
-        plt.plot(positions[:,0], positions[:,1])
-        plt.show()
+        # positions = positions.reshape((int(len(positions)/2), 2))
+        # print(positions)
+#
+        # plt.plot(positions[:, 0], positions[:, 1])
+        # plt.xlim(water_region[0, 0], water_region[1, 0])
+        # plt.ylim(water_region[0, 1], water_region[1, 1])
+        # plt.show()
+
+    print('Simulated energy deposition: ' + str(deposited_energy/N_EVENTS*NUMBER_DENSITY) + ' MeV')
+
+    expected_energy = INIT_ENERGY * NUMBER_DENSITY * find_nearest_energy_absorption_coefficient(ATTEN_COEFF, INIT_ENERGY, MASS_DENSITY) * DEPTH
+
+    print('Expected energy:             ' + str(expected_energy) + ' MeV')
