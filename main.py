@@ -106,7 +106,7 @@ def find_nearest_attenuation_coefficient(list, energy):
     :type energy:   float
     :return:        float
     """
-    idx = (np.abs(list[:, 0] - energy)).argmin()
+    idx = (np.abs(list[:, 0] - energy/1E6)).argmin()
     return list[idx, 1]
 
 
@@ -119,7 +119,7 @@ def find_nearest_cross_sections(list, energy):
     :type energy:   float
     :return:        numpy.ndarray
     """
-    idx = (np.abs(list[:, 0] - energy)).argmin()
+    idx = (np.abs(list[:, 0] - energy/1E6)).argmin()
     return list[idx, 1:]
 
 
@@ -190,6 +190,7 @@ if __name__ == '__main__':
             if photon.in_rectangle(water_region):
                 print('Do stuff!')
                 cross_sections = find_nearest_cross_sections(CROSS_SECTIONS, photon.energy)
+                print(cross_sections)
                 probabilities = cross_sections_to_probabilities(cross_sections)
                 interaction_sampling = random.random()
 
