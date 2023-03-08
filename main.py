@@ -65,41 +65,37 @@ class Photon:
         self.set_energy(0)
 
     def do_compton(self):
-        unsuccessful = True
+        eta_1 = random.random()
+        eta_2 = random.random()
+        zeta = random.random()
 
-        while unsuccessful:
-            eta_1 = random.random()
-            eta_2 = random.random()
-            zeta = random.random()
+        E_prime_min = 1 / (1/self.energy + 2/0.511)
+        E_prime_max = self.energy
 
-            E_prime_min = 1 / (1/self.energy + 2/0.511)
-            E_prime_max = self.energy
+        A_1 = 2 / (E_prime_max**2 - E_prime_min**2)
+        A_2 = 1 / (np.log(E_prime_max/0.511) - np.log(E_prime_min/0.511))
+        # I'm unsure about the
+        # energy units here...
 
-            A_1 = 2 / (E_prime_max**2 - E_prime_min)
-            A_2 = 1 / (np.log(E_prime_max/0.511) - np.log(E_prime_min/0.511))
-            # I'm unsure about the
-            # energy units here...
+        k_1 = 1/(A_1 * self.energy)
+        k_2 = self.energy/A_2
 
-            k_1 = 1/(A_1 * self.energy)
-            k_2 = self.energy/A_2
+        p_1 = k_1 / (k_1 + k_2)
 
-            p_1 = k_1 / (k_1 + k_2)
+        if eta_1 < p_1:
+            xi = np.sqrt(np.abs(E_prime_min**2 + 2*eta_2/A_1))
+        else:
+            xi = E_prime_min * np.exp(eta_2/A_2)
 
-            if eta_1 < p_1:
-                xi = np.sqrt(np.abs(E_prime_min**2 + 2*eta_2/A_1))
-            else:
-                xi = E_prime_min * np.exp(eta_2/A_2)
+        polar_angle = np.arcsin(np.sqrt(1 - (1 - 0.511/xi + 0.511/self.energy)**2))
+        # I'm unsure about the
+        # energy units here...
 
-            polar_angle = np.arcsin(np.sqrt(1 - (1 - 0.511/xi + 0.511/self.energy)**2))
-            # I'm unsure about the
-            # energy units here...
+        fcg_quotient = 1 - np.sin(polar_angle) ** 2 / (xi/self.energy + self.energy/xi)
 
-            fcg_quotient = 1 - np.sin(polar_angle) ** 2 / (xi/self.energy + self.energy/xi)
-
-            if zeta <= fcg_quotient:
-                self.set_energy(xi)
-                self.set_direction(self.direction + random_sign() * polar_angle)
-                unsuccessful = False
+        if zeta <= fcg_quotient:
+            self.set_energy(xi)
+            self.set_direction(self.direction + random_sign() * polar_angle)
 
     def do_pair_production(self):
         self.set_energy(0)
@@ -184,11 +180,15 @@ ATTEN_COEFF = np.load('attenuation_coefficients.npy')
 CROSS_SECTIONS = np.load('cross_sections.npy')
 
 # number of events
-N_EVENTS = int(1)
+N_EVENTS = int(1E5)
 
 if __name__ == '__main__':
 
     deposited_energy = 0
+    n_compton = 0
+    n_rayleigh = 0
+    n_pair_production = 0
+    n_photoelectric = 0
     for i in range(N_EVENTS):
         # create photon
         print('Creating new photon...')
@@ -219,19 +219,23 @@ if __name__ == '__main__':
                 if interaction_sampling <= probabilities[0]:
                     # Rayleigh scattering
                     photon.do_rayleigh()
+                    n_rayleigh += 1
 
                 elif interaction_sampling <= probabilities[0] + probabilities[2]:
                     # photoelectric absorption
                     photon.do_photoelectric()
+                    n_photoelectric += 1
                     print('Photoelectric effect.')
 
                 elif interaction_sampling <= np.sum(probabilities[:3]):
                     # Compton scattering
                     photon.do_compton()
+                    n_compton += 1
 
                 else:
                     # pair production
                     photon.do_pair_production()
+                    n_pair_production += 1
                     print('Pair production.')
 
                 if photon.energy == 0:
@@ -260,3 +264,10 @@ if __name__ == '__main__':
     print('Expected energy:             ' + str(expected_energy) + ' MeV')
 
     print(find_nearest_energy_absorption_coefficient(ATTEN_COEFF, INIT_ENERGY, MASS_DENSITY))
+
+    n_processes = n_compton + n_rayleigh + n_pair_production + n_photoelectric
+
+    print('# of Compton processes:         {} ( {} )'.format(n_compton, n_compton/n_processes))
+    print('# of Rayleigh processes:        {} ( {} )'.format(n_rayleigh, n_rayleigh/n_processes))
+    print('# of Pair production processes: {} ( {} )'.format(n_pair_production, n_pair_production/n_processes))
+    print('# of photoelectric processes    {} ( {} )'.format(n_photoelectric, n_photoelectric/n_processes))
