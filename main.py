@@ -53,7 +53,7 @@ class Photon:
         p_1 = 3/4
 
         if zeta <= p_1:
-            polar_angle = np.arccos(1 - 2*zeta)
+            polar_angle = 8/3 * np.arccos(1 - 2*zeta)
         elif xi <= 0.5:
             polar_angle = np.arccos((1 - 2*xi) ** (1/3))
         else:
@@ -184,7 +184,7 @@ ATTEN_COEFF = np.load('attenuation_coefficients.npy')
 CROSS_SECTIONS = np.load('cross_sections.npy')
 
 # number of events
-N_EVENTS = int(1E4)
+N_EVENTS = int(1)
 
 if __name__ == '__main__':
 
@@ -243,13 +243,13 @@ if __name__ == '__main__':
 
         deposited_energy += (INIT_ENERGY - photon.energy)
 
-        # positions = positions.reshape((int(len(positions)/2), 2))
-        # print(positions)
-#
-        # plt.plot(positions[:, 0], positions[:, 1])
-        # plt.xlim(water_region[0, 0], water_region[1, 0])
-        # plt.ylim(water_region[0, 1], water_region[1, 1])
-        # plt.show()
+        if N_EVENTS == 1:
+            positions = positions.reshape((int(len(positions)/2), 2))
+            print(positions)
+            plt.plot(positions[:, 0], positions[:, 1])
+            plt.xlim(water_region[0, 0], water_region[1, 0])
+            plt.ylim(water_region[0, 1], water_region[1, 1])
+            plt.show()
 
     print('Simulated energy deposition: ' + str(deposited_energy/N_EVENTS*NUMBER_DENSITY) + ' MeV')
 
@@ -258,3 +258,5 @@ if __name__ == '__main__':
                                                                                                         MASS_DENSITY)
 
     print('Expected energy:             ' + str(expected_energy) + ' MeV')
+
+    print(find_nearest_energy_absorption_coefficient(ATTEN_COEFF, INIT_ENERGY, MASS_DENSITY))
