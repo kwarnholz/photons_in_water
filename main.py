@@ -162,7 +162,7 @@ water_region = np.array([[BEAM_SOURCE[0], BEAM_SOURCE[1]-WIDTH/2],
                          [BEAM_SOURCE[0]+DEPTH, BEAM_SOURCE[1]+WIDTH/2]])
 
 # initial energy
-INIT_ENERGY = 0.1  # MeV
+INIT_ENERGY = 1  # MeV
 
 # initial direction (pencil beam: 0)
 INIT_DIRECTION = 0
@@ -180,11 +180,11 @@ ATTEN_COEFF = np.load('attenuation_coefficients.npy')
 CROSS_SECTIONS = np.load('cross_sections.npy')
 
 # number of events
-N_EVENTS = int(1E5)
+N_EVENTS = int(1E4)
 
 if __name__ == '__main__':
 
-    deposited_energy = 0
+    deposited_energy = np.array([])
     n_compton = 0
     n_rayleigh = 0
     n_pair_production = 0
@@ -245,8 +245,9 @@ if __name__ == '__main__':
                 print('The photon is gone.')
                 consider_photon = False
 
-        deposited_energy += (INIT_ENERGY - photon.energy)
+        deposited_energy = np.concatenate((deposited_energy, [(INIT_ENERGY - photon.energy)]), axis=None)
 
+        # plot a track (only if N_EVENTS == 1)
         if N_EVENTS == 1:
             positions = positions.reshape((int(len(positions)/2), 2))
             print(positions)
@@ -255,7 +256,13 @@ if __name__ == '__main__':
             plt.ylim(water_region[0, 1], water_region[1, 1])
             plt.show()
 
-    print('Simulated energy deposition: ' + str(deposited_energy/N_EVENTS*NUMBER_DENSITY) + ' MeV')
+    deposited_energy_mean = deposited_energy.mean()
+    deposited_energy_variance = deposited_energy.var()
+
+    print('Deposited energy (mean):     ' + str(deposited_energy_mean) + ' MeV')
+    print('Deposited energy (variance): ' + str(deposited_energy_variance) + ' MeV')
+
+    print('Simulated energy deposition: ' + str(deposited_energy_mean*NUMBER_DENSITY) + ' MeV')
 
     expected_energy = INIT_ENERGY * NUMBER_DENSITY * DEPTH * find_nearest_energy_absorption_coefficient(ATTEN_COEFF,
                                                                                                         INIT_ENERGY,
